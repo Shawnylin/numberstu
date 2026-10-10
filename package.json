@@ -1,0 +1,12 @@
+{
+  "name": "baihuafen",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/server.mjs",
+    "test": "node --test",
+    "check": "node --check app.js && node --check training.js && node --check sw.js"
+  },
+  "engines": { "node": ">=20" }
+}
