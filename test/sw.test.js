@@ -78,9 +78,9 @@ test('POST, third-party and non-shell requests are left to the network', async (
 
 test('failed precache removes the new cache and preserves the old usable version', async () => {
   const fake = worker({ legacy: true, failInstall: true });
+  const existingCaches = [...fake.stores.keys()];
   await assert.rejects(fake.event('install'), /offline/);
-  assert.ok(fake.stores.has('baihuafen-v1'));
-  assert.ok(![...fake.stores.keys()].some(key => key.includes('v2-20261010')));
+  assert.deepEqual([...fake.stores.keys()], existingCaches);
   assert.equal(fake.state.skipped, false);
 });
 

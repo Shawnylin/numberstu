@@ -1,6 +1,6 @@
 // Bump this version whenever an app-shell file changes. Each version is cached
 // together so a new HTML file never runs against scripts from an older release.
-const VERSION = 'v2-20261010.3';
+const VERSION = 'v2-20261011.3';
 const SCOPE = self.registration.scope;
 const PREFIX = `baihuafen-${new URL(SCOPE).pathname.replace(/[^a-z0-9]/gi, '_')}-`;
 const CACHE = `${PREFIX}${VERSION}`;
