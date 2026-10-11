@@ -215,11 +215,12 @@ export function judgeAnswer(unit, raw) {
   if (!/^\d+(?:\.\d+)?$/.test(value) || !Number.isFinite(Number(value)) || !(Number(value) > 0)) return { valid: false, correct: false };
   const expected = answerDetails(unit).expected;
   const exact = 100 / Number(unit.direction === 'percent' ? unit.pair.percent : unit.pair.denominator);
-  // Accept the learned approximation, numeric equivalents, and a correctly
-  // rounded reciprocal. Require at least one decimal for alternate answers so
-  // coarse guesses like 4 for 27% are not rewarded.
-  const decimals = Math.max(1, (expected.split('.')[1] || '').length, (value.split('.')[1] || '').length);
-  const correct = Math.abs(Number(value) - Number(expected)) < 1e-9 || Math.abs(Number(value) - exact) <= 0.5 * 10 ** -decimals + 1e-9;
+  // Use the mathematical reciprocal as the tolerance center in both directions.
+  // A 1% relative error accepts 66 / 66.7 / 67 for 1/1.5, but rejects 4 for 27%.
+  // Extra decimal places must not change the result; mnemonic answers stay valid.
+  const epsilon = Math.max(1, exact) * 1e-12;
+  const correct = Math.abs(Number(value) - Number(expected)) <= epsilon ||
+    Math.abs(Number(value) - exact) <= exact * 0.01 + epsilon;
   return { valid: true, correct };
 }
 

@@ -17,6 +17,7 @@ let installPrompt = null;
 let registration = null;
 let offlineReady = false;
 let updateRequested = false;
+const dialogOpeners = new WeakMap();
 
 function notice(message) {
   $('notice').textContent = message;
@@ -47,7 +48,7 @@ function syncFromStorage(raw) {
   try {
     state = raw ? restoreState(raw) : createState();
     lastRaw = raw;
-    document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
+    document.querySelectorAll('dialog[open]').forEach(dialog => closeDialog(dialog));
     showView('home');
     notice('另一个页面更新了记录，已同步到最新进度。点击继续本轮即可接着练习。');
   } catch {
@@ -116,28 +117,20 @@ function renderHome() {
   $('dueCount').textContent = info.due;
   $('dailyProgress').textContent = `${info.today} / ${state.settings.dailyGoal} 题`;
   $('dailyBar').style.width = `${Math.min(100, info.today / state.settings.dailyGoal * 100)}%`;
-  $('recommendation').textContent = info.due ? `有 ${info.due} 个方向到期了，今天先把记忆唤醒。` :
-    info.weak ? `有 ${info.weak} 个方向需要巩固，智能练习会多照顾它们。` :
-    info.total ? '保持双向练习，逐渐练到又准又快。' : '先做一轮，找到需要巩固的转换。';
   const settings = state.session?.settings || state.settings;
   $('strategy').value = settings.strategy;
   $('direction').value = settings.direction;
   $('roundLength').value = settings.length;
   $('pace').value = settings.targetSeconds;
   $('settingsForm').querySelectorAll('select').forEach(select => { select.disabled = Boolean(state.session); });
-  $('strategyNote').textContent = {
-    adaptive: '结合首答、用时和复习时间选题；题目充足时，同组转换至少隔开三题。',
-    shuffle: '每轮尽量覆盖不同题目，不按表格顺序；混合模式会平衡两个方向。',
-    mistakes: '只考答错、提示或跳过后的待巩固项；题目较少时会间隔重复。',
-  }[settings.strategy];
   const hasSession = Boolean(state.session);
-  $('startBtn').textContent = hasSession ? '继续本轮 →' : '开始训练 →';
+  $('startBtn').textContent = hasSession ? '继续训练' : '开始训练';
   const empty = !hasSession && !availableUnits(state).length;
   $('startBtn').disabled = empty;
   $('emptyMistakes').hidden = !empty;
   $('resumeNote').hidden = !hasSession;
   $('endBtn').hidden = !hasSession;
-  if (hasSession) $('resumeNote').textContent = `本轮已保存：${strategyNames[settings.strategy]}，完成 ${state.session.results.length} / ${settings.length} 题。结束本轮后可修改训练设置。`;
+  if (hasSession) $('resumeNote').textContent = `已完成 ${state.session.results.length} / ${settings.length} 题 · 本轮设置已锁定`;
 }
 
 function renderQuiz() {
@@ -156,7 +149,7 @@ function renderQuiz() {
   $('timer').textContent = `${(question.elapsedMs / 1000).toFixed(1)}s`;
   $('questionReason').textContent = question.reason;
   $('difficultyLabel').textContent = ['', '基础', '进阶', '近似转换'][unit.pair.difficulty];
-  $('questionLabel').textContent = unit.direction === 'percent' ? '这个百分数约等于哪个分数？' : '这个分数约等于百分之几？';
+  $('questionLabel').textContent = unit.direction === 'percent' ? '换算为分数' : '换算为百分数';
   $('prompt').textContent = details.prompt;
   $('answer').value = question.input;
   $('answer').setAttribute('aria-label', unit.direction === 'percent' ? '答案：分母' : '答案：百分数数值');
@@ -171,14 +164,14 @@ function renderQuiz() {
   if (answered) {
     const result = session.results.at(-1);
     $('feedback').className = `feedback ${result.firstCorrect ? 'ok' : 'hint'}`;
-    $('feedback').textContent = result.firstCorrect ? '首答正确，继续保持。' : result.correct ? '答对了，本题已加入巩固计划。' : `常用答案：${details.display}，稍后再巩固。`;
+    $('feedback').textContent = result.firstCorrect ? '首答正确' : result.correct ? '答对，已计入错题' : `答案：${details.display}`;
     $('explanation').textContent = details.explanation;
   } else if (question.helped) {
     $('feedback').className = 'feedback hint';
     $('feedback').textContent = details.hint;
   } else if (question.wrongAttempts) {
     $('feedback').className = 'feedback bad';
-    $('feedback').textContent = '再想一下。本题会计入待巩固，也可以查看答案。';
+    $('feedback').textContent = '答案有误，可重试或看答案';
   } else {
     $('feedback').className = 'feedback';
     $('feedback').textContent = '';
@@ -211,9 +204,7 @@ function completeSession() {
 function renderResult(summary) {
   const stats = resultStats(summary.results);
   $('resultTag').textContent = summary.partial ? '本轮已结束' : '本轮完成';
-  $('resultTitle').textContent = !stats.total ? '下次从一小轮开始。' : stats.accuracy >= 90 ? '记得准，再练得快。' : '找到薄弱项，就是进步。';
-  $('resultMessage').textContent = !stats.total ? '本轮没有完成题目。已有学习记录会继续保留。' :
-    `完成 ${stats.total} 题，${stats.correct} 题独立首答正确。提示和重试不计为首答正确，进度已保存。`;
+  $('resultMessage').textContent = stats.total ? `首答 ${stats.correct} / ${stats.total} 题正确` : '本轮未答题';
   $('resultAccuracy').textContent = stats.total ? `${stats.accuracy}%` : '—';
   $('resultTime').textContent = `${stats.avgSeconds.toFixed(1)}s`;
   $('resultCount').textContent = stats.total;
@@ -238,7 +229,7 @@ function renderResult(summary) {
   if (!items.length) {
     const paragraph = document.createElement('p');
     paragraph.className = 'field-note';
-    paragraph.textContent = stats.total ? '本轮均独立答对且达到目标用时。明天回来复习，确认记忆是否稳固。' : '开始练习后，这里会列出需要巩固的转换。';
+    paragraph.textContent = '暂无待巩固项';
     $('resultList').append(paragraph);
   }
   $('reviewWeakBtn').textContent = '进入错题巩固';
@@ -256,7 +247,7 @@ function submit() {
   const judgement = judgeAnswer(getUnit(question.unitKey), question.input);
   if (!judgement.valid) {
     $('feedback').className = 'feedback hint';
-    $('feedback').textContent = '请输入完整的正数，例如 8 或 6.25。';
+    $('feedback').textContent = '请输入正数';
     return;
   }
   tick();
@@ -340,17 +331,70 @@ $('dailyGoal').addEventListener('change', () => {
   if (persist() && route === 'home') renderHome();
 });
 
+function syncDialogState() {
+  const open = Boolean(document.querySelector('dialog[open]'));
+  $('dialogBackdrop').hidden = !open;
+  document.querySelector('.app').inert = open;
+  document.body.classList.toggle('dialog-open', open);
+  document.querySelectorAll('dialog').forEach(dialog => { dialog.hidden = !dialog.open; });
+  resumeTimer();
+}
+
+function closeDialog(dialog) {
+  if (dialog.open) dialog.close();
+  syncDialogState();
+  const opener = dialogOpeners.get(dialog);
+  dialogOpeners.delete(dialog);
+  if (!document.querySelector('dialog[open]') && opener?.isConnected && !opener.closest('[hidden], [inert]')) {
+    opener.focus({ preventScroll: true });
+  }
+}
+
 function openDialog(id) {
+  if (document.querySelector('dialog[open]')) return;
   tick();
   timerStarted = null;
   if (!persist()) return;
-  $(id).showModal();
+  const dialog = $(id);
+  dialogOpeners.set(dialog, document.activeElement);
+  dialog.hidden = false;
+  // Manage the backdrop and inert state explicitly. Closing releases page input
+  // synchronously without depending on native modal top-layer cleanup on mobile.
+  dialog.show();
+  syncDialogState();
+  dialog.querySelector('[data-close]').focus({ preventScroll: true });
 }
 
 document.querySelectorAll('[data-close]').forEach(button => {
-  button.addEventListener('click', () => $(button.dataset.close).close());
+  button.addEventListener('click', () => closeDialog($(button.dataset.close)));
 });
-document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('close', resumeTimer));
+document.querySelectorAll('dialog').forEach(dialog => {
+  dialog.addEventListener('close', () => { if (!dialog.open) closeDialog(dialog); });
+  dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(dialog); });
+});
+$('dialogBackdrop').addEventListener('click', () => {
+  const dialog = document.querySelector('dialog[open]');
+  if (dialog) closeDialog(dialog);
+});
+document.addEventListener('keydown', event => {
+  const dialog = document.querySelector('dialog[open]');
+  if (!dialog) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeDialog(dialog);
+  } else if (event.key === 'Tab') {
+    const controls = [...dialog.querySelectorAll('button, a[href], input, select, [tabindex]')]
+      .filter(control => !control.disabled && control.tabIndex >= 0 && control.getClientRects().length);
+    const target = event.shiftKey ? controls.at(-1) : controls[0];
+    const edge = event.shiftKey ? controls[0] : controls.at(-1);
+    if (!dialog.contains(document.activeElement) || document.activeElement === edge) {
+      event.preventDefault();
+      target?.focus();
+    }
+  }
+});
+// Preserve repeated key clicks while cancelling the browser's double-click action.
+document.addEventListener('dblclick', event => event.preventDefault());
 
 $('referenceBtn').addEventListener('click', () => {
   if (state.session?.current?.phase === 'answering') state.session.current.helped = true;
@@ -395,7 +439,7 @@ function renderHistory() {
   if (!state.history.length) {
     const empty = document.createElement('p');
     empty.className = 'field-note';
-    empty.textContent = '完成一轮后，这里会留下你的训练记录。';
+    empty.textContent = '暂无训练记录';
     $('historyList').append(empty);
   }
 }
@@ -440,7 +484,7 @@ $('confirmImportBtn').addEventListener('click', () => {
   timerStarted = null;
   if (!persist()) return;
   $('confirmImportBtn').hidden = true;
-  $('historyDialog').close();
+  closeDialog($('historyDialog'));
   showView('home');
   notice('备份已恢复，可以继续练习。');
 });
@@ -462,8 +506,8 @@ setInterval(() => {
 setInterval(() => { if (timerStarted !== null) { tick(); persist(); } }, 5000);
 
 function connectionStatus() {
-  $('connectionStatus').textContent = !navigator.onLine ? offlineReady ? '离线训练中 · 进度保存在本机' : '当前离线 · 联网后可准备离线资源' :
-    offlineReady ? '离线资源已就绪 · 进度保存在本机' : '在线使用中 · 离线资源尚未就绪';
+  $('connectionStatus').textContent = !navigator.onLine ? offlineReady ? '离线模式' : '离线资源未就绪' :
+    offlineReady ? '离线可用' : '准备离线资源…';
 }
 window.addEventListener('online', connectionStatus);
 window.addEventListener('offline', connectionStatus);
@@ -515,8 +559,9 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
     offlineReady = Boolean(cached);
     connectionStatus();
   }).catch(() => {
-    $('connectionStatus').textContent = '在线使用中 · 离线资源准备失败，下次联网打开时重试';
+    $('connectionStatus').textContent = '离线资源准备失败';
   });
-} else $('connectionStatus').textContent = '在线使用中 · HTTPS 或本机服务器支持离线安装';
+} else $('connectionStatus').textContent = '在线模式';
 
+syncDialogState();
 showView('home');

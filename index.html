@@ -17,53 +17,42 @@
 <body>
 <main class="app">
   <header class="app-header">
-    <a class="brand" href="./" aria-label="百化分首页"><span class="mark" aria-hidden="true">%</span><span><span class="eyebrow">资料分析 · 速算训练</span><strong>百化分</strong></span></a>
+    <a class="brand" href="./" aria-label="百化分首页"><span class="mark" aria-hidden="true">%</span><span><span class="eyebrow">百分数 ⇄ 分数</span><strong>百化分</strong></span></a>
     <button class="icon-button" id="historyBtn" type="button">学习记录</button>
   </header>
   <p id="notice" class="notice" role="status" hidden></p>
-  <div id="updateBanner" class="notice update-banner" hidden><span>新版本已就绪，更新会保存本轮进度。</span><button id="updateBtn" type="button">更新</button></div>
+  <div id="updateBanner" class="notice update-banner" hidden><span>新版本可用 · 进度已保存</span><button id="updateBtn" type="button">更新</button></div>
 
   <section id="homeView" class="view" aria-label="训练首页">
-    <div class="home-overview">
-      <div class="hero">
-        <span class="tag">每天几分钟，让转换更熟练</span>
-        <h1>把常用转换<br />练成直觉<span class="accent">。</span></h1>
-        <p id="recommendation">先做一轮，找到需要巩固的转换。</p>
-        <div class="daily-line"><span>今日练习</span><strong id="dailyProgress">0 / 30 题</strong></div>
-        <div class="bar"><i id="dailyBar"></i></div>
-      </div>
+    <section class="panel home-overview" aria-label="练习进度">
+      <div class="section-heading"><h1>练习进度</h1><span class="muted">30 组 · 双向</span></div>
+      <div class="daily-line"><span>今日目标</span><strong id="dailyProgress">0 / 30 题</strong></div>
+      <div class="bar"><i id="dailyBar"></i></div>
       <div class="dashboard-stats">
-        <div><strong id="masteredCount">0 <small>/ 60</small></strong><span>已掌握方向</span></div>
-        <div><strong id="dueCount">0</strong><span>到期复习</span></div>
+        <div><strong id="masteredCount">0 <small>/ 60</small></strong><span>已掌握</span></div>
+        <div><strong id="dueCount">0</strong><span>待复习</span></div>
         <div><strong id="streakCount">0 <small>天</small></strong><span>连续练习</span></div>
       </div>
-    </div>
+    </section>
     <section class="panel setup-panel">
-      <div class="section-heading"><h2>今天怎么练</h2><button class="text-button" id="referenceBtn" type="button">速记表 ↗</button></div>
+      <div class="section-heading"><h2>训练设置</h2><button class="text-button" id="referenceBtn" type="button">速记表</button></div>
       <form id="settingsForm">
-        <div class="form-field">
+        <div class="form-field wide-field">
           <label for="strategy">训练方式</label>
-          <select id="strategy" aria-describedby="strategyNote"><option value="adaptive">智能练习 · 薄弱项与到期复习</option><option value="shuffle">随机覆盖 · 打乱顺序均衡练习</option><option value="mistakes">错题巩固 · 只练待巩固项</option></select>
-          <p class="field-note" id="strategyNote">结合首答、用时和复习时间选题，同组转换至少隔开三题。</p>
+          <select id="strategy"><option value="adaptive">智能练习</option><option value="shuffle">随机覆盖</option><option value="mistakes">错题巩固</option></select>
         </div>
-        <div class="form-field">
+        <div class="form-field wide-field">
           <label for="direction">答题方向</label>
-          <select id="direction"><option value="mixed">双向混合（推荐）</option><option value="percent">百分数 → 分数</option><option value="fraction">分数 → 百分数</option></select>
+          <select id="direction"><option value="mixed">双向混合</option><option value="percent">百分数 → 分数</option><option value="fraction">分数 → 百分数</option></select>
         </div>
-        <div class="form-field">
-          <div class="settings-grid">
-            <div class="form-field"><label for="roundLength">每轮题数</label><select id="roundLength"><option value="10">10 题</option><option value="20" selected>20 题</option><option value="30">30 题</option></select></div>
-            <div class="form-field"><label for="pace">目标用时</label><select id="pace" aria-describedby="paceNote"><option value="15">从容 · 15 秒</option><option value="8" selected>标准 · 8 秒</option><option value="5">速算 · 5 秒</option></select></div>
-          </div>
-          <p class="field-note" id="paceNote">目标用时用于调整选题，超时也可以继续作答。</p>
-        </div>
+        <div class="form-field"><label for="roundLength">每轮题数</label><select id="roundLength"><option value="10">10 题</option><option value="20" selected>20 题</option><option value="30">30 题</option></select></div>
+        <div class="form-field"><label for="pace">目标用时</label><select id="pace"><option value="15">15 秒</option><option value="8" selected>8 秒</option><option value="5">5 秒</option></select></div>
       </form>
       <p id="resumeNote" class="resume-note" hidden></p>
-      <button class="primary-button" id="startBtn" type="button">开始训练 <span aria-hidden="true">→</span></button>
-      <button class="text-button end-round" id="endBtn" type="button" hidden>结束本轮，查看总结</button>
-      <p id="emptyMistakes" class="field-note" role="status" hidden>这个方向还没有待巩固的错题，先试试智能练习。</p>
+      <button class="primary-button" id="startBtn" type="button">开始训练</button>
+      <button class="text-button end-round" id="endBtn" type="button" hidden>结束本轮</button>
+      <p id="emptyMistakes" class="field-note" role="status" hidden>暂无错题，请切换训练方式。</p>
     </section>
-    <p class="home-footnote">30 组常用近似值 · 两个方向分别记录<br />连续跨天独立答对后，逐步延长复习间隔。</p>
   </section>
 
   <section id="quizView" class="view" aria-label="正在训练" hidden>
@@ -77,31 +66,31 @@
     <div class="quiz-workspace">
       <section class="question-card">
         <div class="question-meta"><span id="questionReason" class="tag">新题探索</span><span id="difficultyLabel">基础</span></div>
-        <h2 id="questionLabel" class="question-label">这个百分数约等于哪个分数？</h2>
+        <h2 id="questionLabel" class="question-label">换算为分数</h2>
         <div class="prompt" id="prompt">12.5%</div>
         <div class="answer-line"><span id="answerPrefix">1 /</span><input id="answer" readonly inputmode="none" autocomplete="off" class="answer-input" aria-label="答案" /><span id="answerSuffix" hidden>%</span></div>
         <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
         <p id="explanation" class="explanation" hidden></p>
-        <div id="helpActions" class="help-actions"><button id="hintBtn" class="text-button" type="button">给个提示</button><button id="revealBtn" class="text-button" type="button">不会，查看答案</button><button id="skipBtn" class="text-button" type="button">跳过</button></div>
-        <p class="hint-note" id="helpNote">提示、重试和跳过会计入待巩固项。</p>
+        <div id="helpActions" class="help-actions"><button id="hintBtn" class="text-button" type="button">提示</button><button id="revealBtn" class="text-button" type="button">看答案</button><button id="skipBtn" class="text-button" type="button">跳过</button></div>
+        <p class="hint-note" id="helpNote">提示、重试或跳过计入错题</p>
       </section>
       <div class="keypad-panel">
         <div class="keypad" id="keypad" aria-label="数字键盘">
-          <button class="key action" data-key="clear" type="button">清空</button><button class="key action" data-key="backspace" type="button" aria-label="退格">⌫</button><button class="key action" data-key="decimal" type="button" aria-label="小数点">.</button>
+          <button class="key action clear" data-key="clear" type="button">清空</button><button class="key action" data-key="backspace" type="button" aria-label="退格">⌫</button>
           <button class="key" data-key="1" type="button">1</button><button class="key" data-key="2" type="button">2</button><button class="key" data-key="3" type="button">3</button>
           <button class="key" data-key="4" type="button">4</button><button class="key" data-key="5" type="button">5</button><button class="key" data-key="6" type="button">6</button>
           <button class="key" data-key="7" type="button">7</button><button class="key" data-key="8" type="button">8</button><button class="key" data-key="9" type="button">9</button>
-          <button class="key zero" data-key="0" type="button">0</button><button class="key enter" id="submitBtn" data-key="enter" type="button">确认</button>
+          <button class="key" data-key="decimal" type="button" aria-label="小数点">.</button><button class="key" data-key="0" type="button">0</button><button class="key enter" id="submitBtn" data-key="enter" type="button">确认</button>
         </div>
-        <p class="keyboard-note">也可用键盘输入数字，按 Enter 确认。</p>
+        <p class="keyboard-note">Enter 确认 · Backspace 退格</p>
       </div>
     </div>
   </section>
 
   <section id="resultView" class="view" aria-label="训练总结" hidden>
-    <div class="result-hero"><span class="tag" id="resultTag">本轮完成</span><h1 id="resultTitle">练习留下了进步。</h1><p id="resultMessage"></p></div>
+    <div class="result-hero"><span class="tag" id="resultTag">本轮完成</span><h1>训练总结</h1><p id="resultMessage"></p></div>
     <div class="dashboard-stats result-stats"><div><strong id="resultAccuracy">0%</strong><span>首答正确率</span></div><div><strong id="resultTime">0.0s</strong><span>平均用时</span></div><div><strong id="resultCount">0</strong><span>完成题数</span></div></div>
-    <section class="panel"><div class="section-heading"><h2>这一轮的巩固清单</h2><span id="weakCount" class="muted"></span></div><p class="field-note">隔几题再考，再通过跨天复习确认记忆。</p><div id="resultList" class="review-list"></div></section>
+    <section class="panel"><div class="section-heading"><h2>待巩固</h2><span id="weakCount" class="muted"></span></div><div id="resultList" class="review-list"></div></section>
     <div class="result-actions"><button id="againBtn" class="primary-button" type="button">再练一轮 →</button><button id="reviewWeakBtn" class="secondary-button" type="button">巩固这些错题</button><button id="homeBtn" class="text-button" type="button">返回首页</button></div>
   </section>
 
@@ -109,21 +98,22 @@
   <noscript><p class="notice">请启用 JavaScript 后使用训练功能。</p></noscript>
 </main>
 
-<dialog id="referenceDialog" aria-labelledby="referenceTitle">
-  <div class="dialog-heading"><h2 id="referenceTitle">常用百化分速记表</h2><button class="icon-button" data-close="referenceDialog" type="button" aria-label="关闭速记表">关闭</button></div>
-  <p class="field-note">这里是速算近似值，并非严格等号。两个方向独立训练，也接受合理舍入的计算答案。</p>
+<div id="dialogBackdrop" class="dialog-backdrop" hidden></div>
+<dialog id="referenceDialog" aria-labelledby="referenceTitle" aria-modal="true" hidden>
+  <div class="dialog-heading"><h2 id="referenceTitle">速记表</h2><button class="icon-button" data-close="referenceDialog" type="button" aria-label="关闭速记表">关闭</button></div>
+  <p class="field-note">速算近似值 · 答案允许 ±1% 相对误差</p>
   <div class="table-scroll"><table><thead><tr><th scope="col">百分数</th><th scope="col">常用分数</th><th scope="col">记忆状态</th></tr></thead><tbody id="referenceBody"></tbody></table></div>
 </dialog>
 
-<dialog id="historyDialog" aria-labelledby="historyTitle">
+<dialog id="historyDialog" aria-labelledby="historyTitle" aria-modal="true" hidden>
   <div class="dialog-heading"><h2 id="historyTitle">学习记录</h2><button class="icon-button" data-close="historyDialog" type="button" aria-label="关闭学习记录">关闭</button></div>
   <p id="lifetimeStats" class="record-summary"></p>
   <label for="dailyGoal">每日目标</label><select id="dailyGoal"><option value="10">10 题</option><option value="20">20 题</option><option value="30">30 题</option><option value="50">50 题</option></select>
   <h3>最近的训练</h3><div id="historyList" class="history-list"></div>
-  <section class="backup-panel"><h3>备份与恢复</h3><p class="field-note">记录保存在这个浏览器中。清理网站数据前，可导出备份；恢复会替换现有记录。</p><div class="backup-actions"><button id="exportBtn" class="secondary-button" type="button">导出备份</button><label class="secondary-button file-label" for="importFile">选择备份<input id="importFile" type="file" accept=".json,application/json" /></label></div><p id="importStatus" class="field-note" role="status"></p><button id="confirmImportBtn" class="primary-button" type="button" hidden>确认替换并恢复</button></section>
+  <section class="backup-panel"><h3>备份与恢复</h3><p class="field-note">记录保存在本机。恢复备份将替换当前记录。</p><div class="backup-actions"><button id="exportBtn" class="secondary-button" type="button">导出备份</button><label class="secondary-button file-label" for="importFile">选择备份<input id="importFile" type="file" accept=".json,application/json" /></label></div><p id="importStatus" class="field-note" role="status"></p><button id="confirmImportBtn" class="primary-button" type="button" hidden>确认替换并恢复</button></section>
 </dialog>
 
-<dialog id="installDialog" aria-labelledby="installTitle">
+<dialog id="installDialog" aria-labelledby="installTitle" aria-modal="true" hidden>
   <div class="dialog-heading"><h2 id="installTitle">把百化分放到主屏幕</h2><button class="icon-button" data-close="installDialog" type="button" aria-label="关闭安装帮助">关闭</button></div>
   <p>iPhone / iPad：在 Safari 打开应用，点分享，再选“添加到主屏幕”。</p><p>Android / 电脑：在浏览器菜单中选择“安装应用”或“添加到主屏幕”。</p><p class="field-note">首次联网打开并准备好离线资源后，即可离线训练。安装入口随浏览器而异。</p>
 </dialog>

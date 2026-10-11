@@ -25,14 +25,44 @@ test('all 30 original conversions accept their canonical answers in both directi
   }
 });
 
-test('numeric equivalents and correctly rounded reciprocals are accepted without accepting coarse guesses', () => {
+test('numeric equivalents and approximate reciprocals are accepted without accepting coarse guesses', () => {
   const fraction = getUnit('p1:percent'); // 5.3% -> 1/19, exact 18.8679...
   for (const input of ['19.0', '019', '1 / 19', '１９', '18.9', '18.87']) assert.equal(judgeAnswer(fraction, input).correct, true, input);
   for (const input of ['18', '20', '19.1', '0', '-19', '.', '19.', '1/0', '1e1', '']) assert.equal(judgeAnswer(fraction, input).correct, false, input);
   assert.equal(judgeAnswer(getUnit('p10:percent'), '4').correct, false);
   assert.equal(judgeAnswer(getUnit('p30:fraction'), '66.7%').correct, true);
-  assert.equal(judgeAnswer(getUnit('p30:fraction'), '66').correct, false);
-  assert.equal(judgeAnswer(getUnit('p4:percent'), '6.3').correct, false); // table expects 6.25
+  assert.equal(judgeAnswer(getUnit('p4:percent'), '6.3').correct, true); // 0.8% relative error
+});
+
+test('1/1.5 accepts the requested whole-number and decimal approximations', () => {
+  const unit = getUnit('p30:fraction');
+  for (const input of ['66', '66.00', '66.7', '66.6667', '67', '67.0000', '６６．７％']) {
+    assert.deepEqual(judgeAnswer(unit, input), { valid: true, correct: true }, input);
+  }
+  for (const input of ['65.99', '65', '67.34', '68', '660']) {
+    assert.deepEqual(judgeAnswer(unit, input), { valid: true, correct: false }, input);
+  }
+});
+
+test('the inclusive 1% tolerance applies to all units and rejects values just outside it', () => {
+  for (const unit of UNITS) {
+    const exact = 100 / Number(unit.direction === 'percent' ? unit.pair.percent : unit.pair.denominator);
+    for (const factor of [0.99, 0.995, 1, 1.005, 1.01]) {
+      const input = (exact * factor).toFixed(12);
+      assert.equal(judgeAnswer(unit, input).correct, true, `${unit.key}: ${input}`);
+    }
+    for (const factor of [0.98999, 1.01001]) {
+      const input = (exact * factor).toFixed(12);
+      assert.equal(judgeAnswer(unit, input).correct, false, `${unit.key}: ${input}`);
+    }
+  }
+});
+
+test('small percentage answers retain proportionate bounds and input precision does not tighten them', () => {
+  const unit = getUnit('p16:fraction'); // 1/16 = 6.25%
+  for (const input of ['6.2', '6.2000', '6.25', '6.3', '6.3000']) assert.equal(judgeAnswer(unit, input).correct, true, input);
+  for (const input of ['6', '7', '6.18', '6.32']) assert.equal(judgeAnswer(unit, input).correct, false, input);
+  for (const input of ['0', '-6.25', '.', '6.', 'NaN', 'Infinity', '6e0', '']) assert.equal(judgeAnswer(unit, input).valid, false, input);
 });
 
 test('random coverage visits every selected-direction item exactly once in a 30-question round', () => {
